@@ -2,6 +2,12 @@
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
+### command to install expo with the template
+
+- npx create-expo-app@latest --template default@sdk-54 .
+- then u can run reset to clear all the boilerplate code
+- to start npx expo start
+
 ## Get started
 
 1. Install dependencies
