@@ -1,5 +1,6 @@
 import { FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import "../global.css";
 
 type Rooms = {
    id: number;
@@ -13,7 +14,7 @@ export default function RootLayout() {
       { id: 2, name: "3 bed", descriptions: "nice room 2" },
    ];
    return (
-      <SafeAreaView style={{ flex: 1, borderRadius: 10 }}>
+      <SafeAreaView className="bg-white">
          <View
             style={{
                padding: 16,
