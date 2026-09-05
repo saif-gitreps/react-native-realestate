@@ -13,3 +13,13 @@
 
 - cheatsheet for key components
   ![alt text](image-1.png)
+
+- there are two types of navigation in react native.
+  ![alt text](image-2.png)
+- screens are placed on top of each other in stack naviation. <Slot> basically says, there will be no naviation.
+
+- react native has file based routing just like next.js
+  ![alt text](image-3.png)
+
+- route groups in expo
+  ![alt text](image-4.png)
