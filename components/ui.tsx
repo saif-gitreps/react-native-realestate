@@ -124,12 +124,17 @@ export function IconButton({
   );
 }
 
-export function ProjectPill({ name }: { name: string }) {
+export function ProjectPill({ name }: { name: string | string[] }) {
+  const names = Array.isArray(name) ? name : [name];
   return (
-    <View style={styles.pill}>
-      <Text style={styles.pillText} numberOfLines={1}>
-        {name}
-      </Text>
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+      {names.map((n, i) => (
+        <View key={i} style={styles.pill}>
+          <Text style={styles.pillText} numberOfLines={1}>
+            {n}
+          </Text>
+        </View>
+      ))}
     </View>
   );
 }

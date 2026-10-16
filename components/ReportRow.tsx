@@ -1,10 +1,14 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Report } from "@/types/report";
+import { Report } from "@/types/shared";
 import { colors, radius, space } from "@/theme";
 import { DateStub } from "@/components/ui";
 
 export function ReportRow({ report, onPress }: { report: Report; onPress: () => void }) {
+  const projectLabel = Array.isArray(report.projectName)
+    ? report.projectName.join(", ")
+    : (report.projectName as unknown as string);
+
   return (
     <Pressable
       onPress={onPress}
@@ -13,7 +17,7 @@ export function ReportRow({ report, onPress }: { report: Report; onPress: () => 
       <DateStub iso={report.date} size="sm" />
       <View style={styles.text}>
         <Text style={styles.project} numberOfLines={1}>
-          {report.projectName}
+          {projectLabel}
         </Text>
         <Text style={styles.summary} numberOfLines={1}>
           {report.keyPoints[0]}

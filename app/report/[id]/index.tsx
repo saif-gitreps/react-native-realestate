@@ -1,14 +1,40 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { colors, radius, space } from "@/theme";
-import { Button, Content, DateStub, ProjectPill, SectionHeading } from "@/components/ui";
-import { getReportById } from "@/lib/dummyReports";
+import { Button, Content, ProjectPill, SectionHeading } from "@/components/ui";
+import { getReport, toggleStar } from "@/lib/storage";
 import { formatDate } from "@/lib/format";
+import { Report } from "@/types/shared";
+import { useFocusEffect } from "expo-router";
+import { useCallback } from "react";
+import * as Clipboard from "expo-clipboard";
 
 export default function ReportDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const report = getReportById(id);
+  const [report, setReport] = useState<Report | undefined>(undefined);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      getReport(id ?? "").then((r) => {
+        setReport(r);
+        setLoading(false);
+      });
+    }, [id]),
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.missing}>
+        <Text style={styles.missingText}>Loading...</Text>
+      </View>
+    );
+  }
 
   if (!report) {
     return (
@@ -20,24 +46,65 @@ export default function ReportDetail() {
     );
   }
 
+  const handleStar = async () => {
+    await toggleStar(report.id);
+    const updated = await getReport(report.id);
+    if (updated) setReport(updated);
+  };
+
+  const copyReport = async () => {
+    const lines: string[] = [
+      `Date: ${report.date}`,
+      `Project: ${report.projectName.join(", ")}`,
+      "",
+      "Key Points:",
+      ...report.keyPoints.map((p) => `  • ${p}`),
+    ];
+    if (report.details.length > 0) {
+      lines.push("", "Details:");
+      report.details.forEach((d) => lines.push(`  ${d}`));
+    }
+    await Clipboard.setStringAsync(lines.join("\n"));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
   return (
     <ScrollView contentContainerStyle={{ paddingVertical: space.xl, paddingBottom: 56 }}>
       <Stack.Screen options={{ title: formatDate(report.date) }} />
       <Content style={{ gap: space.xl }}>
+        {/* Header */}
         <View style={styles.header}>
-          <DateStub iso={report.date} size="lg" />
           <View style={{ flex: 1, gap: 8 }}>
+            <View style={styles.dateStarRow}>
+              <Text style={styles.dateText}>{formatDate(report.date)}</Text>
+              <Pressable onPress={handleStar} hitSlop={8}>
+                <Ionicons
+                  name={report.isStarred ? "star" : "star-outline"}
+                  size={22}
+                  color={report.isStarred ? colors.accent : colors.textFaint}
+                />
+              </Pressable>
+            </View>
             <ProjectPill name={report.projectName} />
-            <Text style={styles.title}>{formatDate(report.date)}</Text>
           </View>
-          <Button
-            label="Edit"
-            icon="create-outline"
-            variant="secondary"
-            onPress={() => router.push(`/report/${report.id}/edit`)}
-          />
+          <View style={styles.headerActions}>
+            <Button
+              label={copied ? "Copied!" : "Copy"}
+              icon={copied ? "checkmark" : "copy-outline"}
+              variant="secondary"
+              onPress={copyReport}
+            />
+            <Button
+              label="Edit"
+              icon="create-outline"
+              variant="secondary"
+              onPress={() => router.push(`/report/${report.id}/edit`)}
+            />
+          </View>
         </View>
 
+        {/* Key points */}
         <View style={{ gap: space.md }}>
           <SectionHeading title="Key points" count={report.keyPoints.length} />
           <View style={styles.pointsBox}>
@@ -50,22 +117,42 @@ export default function ReportDetail() {
           </View>
         </View>
 
-        <View style={{ gap: space.md }}>
-          <SectionHeading title="Details" count={report.details.length} />
-          {report.details.map((d, i) => (
-            <View key={i} style={styles.detail}>
-              <Text style={styles.detailText}>{d}</Text>
-            </View>
-          ))}
-        </View>
+        {/* Details – collapsible */}
+        {report.details.length > 0 && (
+          <View style={{ gap: space.md }}>
+            <Pressable
+              onPress={() => setDetailsOpen(!detailsOpen)}
+              style={styles.detailToggle}
+            >
+              <SectionHeading title="Details" count={report.details.length} />
+              <Ionicons
+                name={detailsOpen ? "chevron-up" : "chevron-down"}
+                size={18}
+                color={colors.textMuted}
+              />
+            </Pressable>
+            {detailsOpen &&
+              report.details.map((d, i) => (
+                <View key={i} style={styles.detail}>
+                  <Text style={styles.detailText}>{d}</Text>
+                </View>
+              ))}
+          </View>
+        )}
       </Content>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", gap: space.lg, flexWrap: "wrap" },
-  title: { color: colors.text, fontSize: 22, fontWeight: "800", letterSpacing: -0.2 },
+  header: { flexDirection: "row", alignItems: "flex-start", gap: space.lg, flexWrap: "wrap" },
+  dateStarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.md,
+  },
+  dateText: { color: colors.text, fontSize: 22, fontWeight: "800", letterSpacing: -0.2 },
+  headerActions: { flexDirection: "row", gap: space.sm },
   pointsBox: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
@@ -77,6 +164,11 @@ const styles = StyleSheet.create({
   pointRow: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.accent, marginTop: 9 },
   pointText: { flex: 1, color: colors.text, fontSize: 16, lineHeight: 25 },
+  detailToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   detail: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,

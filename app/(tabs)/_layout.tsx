@@ -35,6 +35,16 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="starred"
+        options={{
+          title: "Starred",
+          headerTitle: "Starred",
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "star" : "star-outline"} color={color} size={size} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

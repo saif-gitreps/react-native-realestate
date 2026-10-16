@@ -1,21 +1,29 @@
 import { toISO } from "../lib/format";
 import { Report } from "../types/shared";
 
-const projects = ["Billing Portal", "Mobile App", "Admin Dashboard", "Data Migration"];
+const projects = [
+   "schoolerp",
+   "wexnix portfolio",
+   "a&a shoes hrm",
+   "Billing Portal",
+   "Mobile App",
+   "Admin Dashboard",
+   "Data Migration",
+];
 
 const keyPool = [
-   "Fixed the invoice rounding bug on the checkout summary",
-   "Reviewed two pull requests from the backend team",
-   "Wrote unit tests for the payment retry service",
-   "Migrated the user table to the new schema",
-   "Paired on the search filter performance issue",
-   "Updated API docs for the reports endpoint",
-   "Investigated a crash on the Android login screen",
-   "Cleaned up unused environment variables",
-   "Demoed the new dashboard to the product owner",
-   "Set up the staging deployment pipeline",
-   "Refactored the notification preferences form",
-   "Triaged open bugs and moved four to next sprint",
+   "[bug fixes]Fixed the invoice rounding bug on the checkout summary",
+   "[others]Reviewed two pull requests from the backend team",
+   "[SQA]Wrote unit tests for the payment retry service",
+   "[feature]Migrated the user table to the new schema",
+   "[others]Paired on the search filter performance issue",
+   "[enhancement]Updated API docs for the reports endpoint",
+   "[bug fixes]Investigated a crash on the Android login screen",
+   "[others]Cleaned up unused environment variables",
+   "[others]Demoed the new dashboard to the product owner",
+   "[feature]Set up the staging deployment pipeline",
+   "[enhancement]Refactored the notification preferences form",
+   "[others]Triaged open bugs and moved four to next sprint",
 ];
 
 const detailPool = [
@@ -35,7 +43,8 @@ export const dummyReports: Report[] = Array.from({ length: 42 }, (_, i) => {
    return {
       id: `r${i + 1}`,
       date: toISO(d),
-      projectName: projects[(i + Math.floor(i / 3)) % projects.length],
+      projectName: [projects[(i + Math.floor(i / 3)) % projects.length]],
+      rawInput: undefined,
       keyPoints: Array.from(
          { length: keyCount },
          (_, k) => keyPool[(i * 3 + k) % keyPool.length],
@@ -44,6 +53,7 @@ export const dummyReports: Report[] = Array.from({ length: 42 }, (_, i) => {
          { length: detailCount },
          (_, k) => detailPool[(i + k * 2) % detailPool.length],
       ),
+      isStarred: i % 7 === 0, // every 7th report starred for demo
    };
 });
 

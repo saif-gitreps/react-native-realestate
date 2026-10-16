@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { Report } from "@/types/report";
+import { Report } from "@/types/shared";
 import { colors, radius, space } from "@/theme";
 import { Button, Chip, Field } from "@/components/ui";
 import { isValidISO, shiftDays, todayISO, toISO } from "@/lib/format";
