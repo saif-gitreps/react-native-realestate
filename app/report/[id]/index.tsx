@@ -70,18 +70,18 @@ export default function ReportDetail() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ paddingVertical: space.xl, paddingBottom: 56 }}>
+    <ScrollView contentContainerStyle={{ paddingVertical: space.lg, paddingBottom: 56 }}>
       <Stack.Screen options={{ title: formatDate(report.date) }} />
-      <Content style={{ gap: space.xl }}>
+      <Content style={{ gap: space.lg }}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={{ flex: 1, gap: 8 }}>
+          <View style={{ flex: 1, gap: 6 }}>
             <View style={styles.dateStarRow}>
               <Text style={styles.dateText}>{formatDate(report.date)}</Text>
               <Pressable onPress={handleStar} hitSlop={8}>
                 <Ionicons
                   name={report.isStarred ? "star" : "star-outline"}
-                  size={22}
+                  size={20}
                   color={report.isStarred ? colors.accent : colors.textFaint}
                 />
               </Pressable>
@@ -105,7 +105,7 @@ export default function ReportDetail() {
         </View>
 
         {/* Key points */}
-        <View style={{ gap: space.md }}>
+        <View style={{ gap: space.sm }}>
           <SectionHeading title="Key points" count={report.keyPoints.length} />
           <View style={styles.pointsBox}>
             {report.keyPoints.map((p, i) => (
@@ -119,7 +119,7 @@ export default function ReportDetail() {
 
         {/* Details – collapsible */}
         {report.details.length > 0 && (
-          <View style={{ gap: space.md }}>
+          <View style={{ gap: space.sm }}>
             <Pressable
               onPress={() => setDetailsOpen(!detailsOpen)}
               style={styles.detailToggle}
@@ -127,7 +127,7 @@ export default function ReportDetail() {
               <SectionHeading title="Details" count={report.details.length} />
               <Ionicons
                 name={detailsOpen ? "chevron-up" : "chevron-down"}
-                size={18}
+                size={16}
                 color={colors.textMuted}
               />
             </Pressable>
@@ -145,25 +145,25 @@ export default function ReportDetail() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "flex-start", gap: space.lg, flexWrap: "wrap" },
+  header: { flexDirection: "row", alignItems: "flex-start", gap: space.md, flexWrap: "wrap" },
   dateStarRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: space.md,
   },
-  dateText: { color: colors.text, fontSize: 22, fontWeight: "800", letterSpacing: -0.2 },
+  dateText: { color: colors.text, fontSize: 20, fontWeight: "800", letterSpacing: -0.2 },
   headerActions: { flexDirection: "row", gap: space.sm },
   pointsBox: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: space.lg,
-    gap: space.md,
+    padding: space.md + 2,
+    gap: space.sm,
   },
-  pointRow: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.accent, marginTop: 9 },
-  pointText: { flex: 1, color: colors.text, fontSize: 16, lineHeight: 25 },
+  pointRow: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent, marginTop: 7 },
+  pointText: { flex: 1, color: colors.text, fontSize: 14, lineHeight: 22 },
   detailToggle: {
     flexDirection: "row",
     alignItems: "center",
@@ -174,9 +174,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderLeftWidth: 3,
     borderLeftColor: colors.accent,
-    padding: space.lg,
+    padding: space.md,
   },
-  detailText: { color: colors.text, fontSize: 15.5, lineHeight: 25 },
+  detailText: { color: colors.text, fontSize: 13.5, lineHeight: 22 },
   missing: {
     flex: 1,
     alignItems: "center",
@@ -184,6 +184,6 @@ const styles = StyleSheet.create({
     gap: space.sm,
     padding: space.xl,
   },
-  missingTitle: { color: colors.text, fontSize: 18, fontWeight: "700" },
-  missingText: { color: colors.textMuted, fontSize: 14, marginBottom: space.md },
+  missingTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
+  missingText: { color: colors.textMuted, fontSize: 12, marginBottom: space.md },
 });

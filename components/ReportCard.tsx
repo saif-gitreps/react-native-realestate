@@ -41,13 +41,13 @@ export function ReportCard({
          onPress={onPress}
          style={({ pressed }) => [styles.card, pressed && onPress && { opacity: 0.85 }]}
       >
-         {/* Top row: date + star */}
+         {/* Top row: single line simple date + star */}
          <View style={styles.topRow}>
             <Text style={styles.date}>{formatDate(report.date)}</Text>
             <Pressable onPress={onToggleStar} hitSlop={8}>
                <Ionicons
                   name={report.isStarred ? "star" : "star-outline"}
-                  size={20}
+                  size={18}
                   color={report.isStarred ? colors.accent : colors.textFaint}
                />
             </Pressable>
@@ -56,7 +56,7 @@ export function ReportCard({
          {/* Project pills */}
          <ProjectPill name={report.projectName} />
 
-         {/* Key points – show all */}
+         {/* Key points – view all */}
          <View style={styles.points}>
             {report.keyPoints.map((p, i) => (
                <View key={i} style={styles.pointRow}>
@@ -66,7 +66,7 @@ export function ReportCard({
             ))}
          </View>
 
-         {/* Details – collapsible */}
+         {/* Details – hidable list */}
          {report.details.length > 0 && (
             <View>
                <Pressable
@@ -75,7 +75,7 @@ export function ReportCard({
                >
                   <Ionicons
                      name={detailsOpen ? "chevron-up" : "chevron-down"}
-                     size={16}
+                     size={14}
                      color={colors.textMuted}
                   />
                   <Text style={styles.detailToggleText}>
@@ -94,7 +94,7 @@ export function ReportCard({
             </View>
          )}
 
-         {/* Bottom: meta + copy */}
+         {/* Bottom row: meta + copy button */}
          <View style={styles.bottomRow}>
             <Text style={styles.meta}>
                {report.keyPoints.length} key points
@@ -103,7 +103,7 @@ export function ReportCard({
             <Pressable onPress={copyReport} style={styles.copyBtn} hitSlop={6}>
                <Ionicons
                   name={copied ? "checkmark" : "copy-outline"}
-                  size={16}
+                  size={14}
                   color={copied ? colors.accent : colors.textMuted}
                />
                <Text style={[styles.copyText, copied && { color: colors.accent }]}>
@@ -122,8 +122,8 @@ const styles = StyleSheet.create({
       borderRadius: radius.lg,
       borderWidth: 1,
       borderColor: colors.border,
-      padding: space.lg,
-      gap: space.md,
+      padding: space.md + 2,
+      gap: space.sm + 2,
    },
    topRow: {
       flexDirection: "row",
@@ -132,57 +132,57 @@ const styles = StyleSheet.create({
    },
    date: {
       color: colors.text,
-      fontSize: 14,
+      fontSize: 12,
       fontWeight: "600",
    },
-   points: { gap: 8 },
-   pointRow: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
+   points: { gap: 6 },
+   pointRow: { flexDirection: "row", gap: 8, alignItems: "flex-start" },
    dot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
+      width: 5,
+      height: 5,
+      borderRadius: 2.5,
       backgroundColor: colors.accent,
-      marginTop: 8,
+      marginTop: 6,
    },
-   pointText: { flex: 1, color: colors.text, fontSize: 14.5, lineHeight: 21 },
+   pointText: { flex: 1, color: colors.text, fontSize: 12.5, lineHeight: 18 },
    detailToggle: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
-      paddingVertical: 4,
+      gap: 5,
+      paddingVertical: 3,
    },
    detailToggleText: {
       color: colors.textMuted,
-      fontSize: 13,
+      fontSize: 11,
       fontWeight: "500",
    },
-   detailsList: { gap: space.sm, marginTop: space.sm },
+   detailsList: { gap: space.xs + 2, marginTop: space.xs },
    detailItem: {
       backgroundColor: colors.surfaceAlt,
-      borderRadius: radius.md,
+      borderRadius: radius.sm,
       borderLeftWidth: 3,
       borderLeftColor: colors.accent,
-      padding: space.md,
+      padding: space.sm,
    },
-   detailText: { color: colors.text, fontSize: 14, lineHeight: 22 },
+   detailText: { color: colors.text, fontSize: 12, lineHeight: 18 },
    bottomRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       borderTopWidth: 1,
       borderTopColor: colors.border,
-      paddingTop: space.sm,
+      paddingTop: space.xs + 2,
       marginTop: 2,
    },
-   meta: { color: colors.textMuted, fontSize: 12.5 },
+   meta: { color: colors.textMuted, fontSize: 10.5 },
    copyBtn: {
       flexDirection: "row",
       alignItems: "center",
       gap: 4,
-      paddingVertical: 4,
-      paddingHorizontal: 8,
+      paddingVertical: 3,
+      paddingHorizontal: 7,
       borderRadius: radius.sm,
       backgroundColor: colors.surfaceAlt,
    },
-   copyText: { color: colors.textMuted, fontSize: 12.5, fontWeight: "500" },
+   copyText: { color: colors.textMuted, fontSize: 10.5, fontWeight: "500" },
 });

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { colors, radius, space } from "@/theme";
-import { Button, Chip, Content, Field, Toast } from "@/components/ui";
+import { colors, space } from "@/theme";
+import { Button, Chip, Content, Field, RemovablePill, Toast } from "@/components/ui";
 import { StringListEditor } from "@/components/StringListEditor";
 import { getReport, updateReport, deleteReport } from "@/lib/storage";
 import { projectNames } from "@/lib/dummyReports";
@@ -79,6 +79,10 @@ export default function EditReport() {
       }
    };
 
+   const removeProject = (name: string) => {
+      setProjects(projects.filter((p) => p !== name));
+   };
+
    const addCustomProject = () => {
       const trimmed = newProject.trim();
       if (trimmed && !projects.includes(trimmed)) {
@@ -95,32 +99,49 @@ export default function EditReport() {
          >
             <ScrollView
                keyboardShouldPersistTaps="handled"
-               contentContainerStyle={{ paddingVertical: space.xl, paddingBottom: 56 }}
+               contentContainerStyle={{ paddingVertical: space.md, paddingBottom: 56 }}
             >
-               <Content style={{ gap: space.xl }}>
-                  <Field
-                     label="Date"
-                     icon="calendar-outline"
-                     value={date}
-                     onChangeText={setDate}
-                     placeholder="YYYY-MM-DD"
-                     autoCapitalize="none"
-                  />
-                  {date.length === 10 && !isValidISO(date) ? (
-                     <Text style={styles.error}>Use valid date in YYYY-MM-DD format</Text>
-                  ) : null}
+               <Content style={{ gap: space.md }}>
+                  <View style={{ gap: space.xs }}>
+                     <Field
+                        icon="calendar-outline"
+                        value={date}
+                        onChangeText={setDate}
+                        placeholder="YYYY-MM-DD"
+                        autoCapitalize="none"
+                     />
+                     {date.length === 10 && !isValidISO(date) ? (
+                        <Text style={styles.error}>Use valid date in YYYY-MM-DD format</Text>
+                     ) : null}
+                  </View>
 
-                  <View style={{ gap: space.sm }}>
-                     <Text style={styles.label}>Projects</Text>
+                  <View style={{ gap: space.xs + 2 }}>
+                     {/* Selected removable project pills */}
+                     {projects.length > 0 && (
+                        <View style={styles.pillContainer}>
+                           {projects.map((p) => (
+                              <RemovablePill
+                                 key={p}
+                                 label={p}
+                                 onRemove={() => removeProject(p)}
+                              />
+                           ))}
+                        </View>
+                     )}
+
                      <View style={styles.chipRow}>
-                        {projectNames.map((p) => (
-                           <Chip
-                              key={p}
-                              label={p}
-                              active={projects.includes(p)}
-                              onPress={() => toggleProject(p)}
-                           />
-                        ))}
+                        {projectNames.map((p) => {
+                           const active = projects.includes(p);
+                           return (
+                              <Chip
+                                 key={p}
+                                 label={p}
+                                 active={active}
+                                 icon={active ? "checkmark" : undefined}
+                                 onPress={() => toggleProject(p)}
+                              />
+                           );
+                        })}
                      </View>
 
                      <View style={styles.addProjectRow}>
@@ -172,7 +193,7 @@ export default function EditReport() {
                      icon="trash-outline"
                      variant="ghost"
                      onPress={handleDelete}
-                     style={{ alignSelf: "center", marginTop: space.sm }}
+                     style={{ alignSelf: "center", marginTop: space.xs }}
                   />
                </Content>
             </ScrollView>
@@ -183,11 +204,11 @@ export default function EditReport() {
 }
 
 const styles = StyleSheet.create({
-   label: { color: colors.textMuted, fontSize: 13, fontWeight: "600" },
-   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
+   pillContainer: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: space.xs + 2 },
    addProjectRow: { flexDirection: "row", gap: space.sm, alignItems: "center" },
    actions: { flexDirection: "row", gap: space.md },
-   error: { color: colors.danger, fontSize: 13, marginTop: -4 },
+   error: { color: colors.danger, fontSize: 11, marginTop: -2 },
    missing: {
       flex: 1,
       alignItems: "center",
@@ -195,5 +216,5 @@ const styles = StyleSheet.create({
       gap: space.md,
       padding: space.xl,
    },
-   missingTitle: { color: colors.text, fontSize: 18, fontWeight: "700" },
+   missingTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
 });

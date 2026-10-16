@@ -4,23 +4,19 @@
  */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { dummyReports } from "@/lib/dummyReports";
 import { Report } from "@/types/shared";
 
-const STORAGE_KEY = "work_reports";
+// Using v2 key to immediately start with clean, empty local storage
+const STORAGE_KEY = "work_reports_v2";
 
-/** Get all reports from local storage. Seeds with dummyReports on first run. */
+/** Get all reports from local storage. Starts completely empty. */
 export async function getAllReports(): Promise<Report[]> {
    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-   if (!raw) {
-      // First run: seed with default dummyReports
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(dummyReports));
-      return dummyReports;
-   }
+   if (!raw) return [];
    try {
       return JSON.parse(raw) as Report[];
    } catch {
-      return dummyReports;
+      return [];
    }
 }
 
@@ -65,6 +61,12 @@ export async function toggleStar(id: string): Promise<boolean> {
 export async function getReport(id: string): Promise<Report | undefined> {
    const reports = await getAllReports();
    return reports.find((r) => r.id === id);
+}
+
+/** Clear all reports from local storage. */
+export async function clearAllReports(): Promise<void> {
+   await AsyncStorage.removeItem(STORAGE_KEY);
+   await AsyncStorage.removeItem("work_reports"); // also clean previous key
 }
 
 /** Generate a unique ID. */

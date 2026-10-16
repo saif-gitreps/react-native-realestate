@@ -1,11 +1,12 @@
 import { ExportFormat, ExportModal } from "@/components/ExportModal";
 import { ReportCard } from "@/components/ReportCard";
-import { Button, Content, Toast } from "@/components/ui";
+import { Content, IconButton, Toast } from "@/components/ui";
 import { getAllReports, toggleStar } from "@/lib/storage";
 import { colors, radius, space } from "@/theme";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { FlatList, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Report } from "../../types/shared";
 
 export default function Starred() {
@@ -47,11 +48,11 @@ export default function Starred() {
       setReports(updated);
    };
 
-   const itemStyle = { width: `${100 / cols}%` as `${number}%`, padding: 6 };
+   const itemStyle = { width: `${100 / cols}%` as `${number}%`, padding: 10 };
 
    return (
       <View style={{ flex: 1 }}>
-         <Content fill style={{ paddingTop: space.lg }}>
+         <Content fill style={{ paddingTop: space.md }}>
             <View style={styles.header}>
                <View style={{ flex: 1 }}>
                   <Text style={styles.title}>Starred</Text>
@@ -59,10 +60,8 @@ export default function Starred() {
                      {starred.length} {starred.length === 1 ? "report" : "reports"}
                   </Text>
                </View>
-               <Button
-                  label="Download"
+               <IconButton
                   icon="download-outline"
-                  variant="secondary"
                   disabled={starred.length === 0}
                   onPress={() => setExportOpen(true)}
                />
@@ -76,7 +75,8 @@ export default function Starred() {
                numColumns={cols}
                keyboardShouldPersistTaps="handled"
                showsVerticalScrollIndicator={false}
-               style={{ marginHorizontal: -6 }}
+               style={{ marginHorizontal: -10 }}
+               contentContainerStyle={{ paddingBottom: 90 }}
                renderItem={({ item }) => (
                   <View style={itemStyle}>
                      <ReportCard
@@ -96,6 +96,15 @@ export default function Starred() {
                }
             />
          </Content>
+
+         {/* Floating Add button at the bottom */}
+         <Pressable
+            style={styles.fab}
+            onPress={() => router.push("/")}
+            accessibilityLabel="Add report"
+         >
+            <Ionicons name="add" size={26} color={colors.onAccent} />
+         </Pressable>
 
          <ExportModal
             visible={exportOpen}
@@ -120,10 +129,10 @@ const styles = StyleSheet.create({
       flexDirection: "row",
       alignItems: "center",
       gap: space.md,
-      marginBottom: space.lg,
+      marginBottom: space.md,
    },
-   title: { color: colors.text, fontSize: 26, fontWeight: "800", letterSpacing: -0.3 },
-   sub: { color: colors.textMuted, fontSize: 14, marginTop: 2 },
+   title: { color: colors.text, fontSize: 24, fontWeight: "800", letterSpacing: -0.3 },
+   sub: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
    empty: {
       alignItems: "center",
       gap: space.sm,
@@ -132,18 +141,33 @@ const styles = StyleSheet.create({
       borderStyle: "dashed",
       borderColor: colors.border,
       borderRadius: radius.lg,
-      margin: 6,
+      margin: 10,
    },
    emptyTitle: {
       color: colors.text,
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: "700",
       textAlign: "center",
    },
    emptyText: {
       color: colors.textMuted,
-      fontSize: 14,
+      fontSize: 12,
       textAlign: "center",
    },
+   fab: {
+      position: "absolute",
+      right: 20,
+      bottom: 24,
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.accent,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.35,
+      shadowRadius: 6,
+      elevation: 6,
+   },
 });
-

@@ -1,4 +1,4 @@
-import { Button, Chip, Content, Field, Toast } from "@/components/ui";
+import { Button, Chip, Content, Field, RemovablePill, Toast } from "@/components/ui";
 import { StringListEditor } from "@/components/StringListEditor";
 import { parseReport } from "@/lib/reportParser";
 import { createReport, generateId } from "@/lib/storage";
@@ -16,20 +16,22 @@ import {
    View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 export default function AddReport() {
+   const router = useRouter();
    const [dateOverride, setDateOverride] = useState("");
-   const [selectedProject, setSelectedProject] = useState("");
-   const [customProject, setCustomProject] = useState("");
+   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+   const [customProjectInput, setCustomProjectInput] = useState("");
    const [text, setText] = useState("");
    const [manualDetails, setManualDetails] = useState<string[]>([]);
    const [toast, setToast] = useState<string | null>(null);
    const [showDatePicker, setShowDatePicker] = useState(false);
-   const [showProjectPicker, setShowProjectPicker] = useState(false);
+   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
 
    useEffect(() => {
       if (!toast) return;
-      const t = setTimeout(() => setToast(null), 2200);
+      const t = setTimeout(() => setToast(null), 2400);
       return () => clearTimeout(t);
    }, [toast]);
 
@@ -41,21 +43,21 @@ export default function AddReport() {
    const dateSource = dateOverride.trim()
       ? "picker"
       : parsed.detectedDate
-        ? "algo detected"
+        ? "detected"
         : "default";
 
    // Project resolution: dropdown/manual selection has precedence over algo detection
-   const chosenProject = (customProject.trim() || selectedProject.trim());
-   const resolvedProjects: string[] = chosenProject
-      ? [chosenProject]
+   const hasManualProjects = selectedProjects.length > 0;
+   const resolvedProjects: string[] = hasManualProjects
+      ? selectedProjects
       : parsed.detectedProjects.length > 0
         ? parsed.detectedProjects
         : ["General"];
 
-   const projectSource = chosenProject
+   const projectSource = hasManualProjects
       ? "selected"
       : parsed.detectedProjects.length > 0
-        ? "algo detected"
+        ? "detected"
         : "default";
 
    // Combine algo details with manual details
@@ -64,7 +66,36 @@ export default function AddReport() {
    const hasContent = text.trim().length > 0 || manualDetails.some((d) => d.trim());
    const valid = isValidISO(resolvedDate) && hasContent;
 
-   const save = async () => {
+   const toggleProject = (name: string) => {
+      if (selectedProjects.includes(name)) {
+         setSelectedProjects(selectedProjects.filter((p) => p !== name));
+      } else {
+         setSelectedProjects([...selectedProjects, name]);
+      }
+   };
+
+   const addCustomProject = () => {
+      const trimmed = customProjectInput.trim();
+      if (trimmed && !selectedProjects.includes(trimmed)) {
+         setSelectedProjects([...selectedProjects, trimmed]);
+         setCustomProjectInput("");
+      }
+   };
+
+   const removeProject = (name: string) => {
+      setSelectedProjects(selectedProjects.filter((p) => p !== name));
+   };
+
+   const handleAddReport = async () => {
+      if (!hasContent) {
+         setToast("Please enter your work report text first");
+         return;
+      }
+      if (!isValidISO(resolvedDate)) {
+         setToast("Please enter a valid date (YYYY-MM-DD)");
+         return;
+      }
+
       await createReport({
          id: generateId(),
          date: resolvedDate,
@@ -74,12 +105,18 @@ export default function AddReport() {
          details: allDetails,
          isStarred: false,
       });
-      setToast("Report saved");
+
+      setToast("Report added successfully!");
       setText("");
       setDateOverride("");
-      setSelectedProject("");
-      setCustomProject("");
+      setSelectedProjects([]);
+      setCustomProjectInput("");
       setManualDetails([]);
+
+      // Navigate to reports tab so user immediately sees their newly added card
+      setTimeout(() => {
+         router.push("/reports");
+      }, 400);
    };
 
    return (
@@ -90,27 +127,23 @@ export default function AddReport() {
          >
             <ScrollView
                keyboardShouldPersistTaps="handled"
-               contentContainerStyle={{ paddingVertical: space.xl }}
+               contentContainerStyle={{ paddingVertical: space.md, paddingBottom: 140 }}
             >
-               <Content style={{ gap: space.xl }}>
+               <Content style={{ gap: space.md }}>
                   {/* Date section */}
-                  <View style={{ gap: space.sm }}>
-                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionLabel}>Date</Text>
-                        <Text style={styles.sourceTag}>({dateSource}: {resolvedDate})</Text>
-                     </View>
-
+                  <View style={{ gap: space.xs + 2 }}>
                      <Pressable
                         style={styles.pickerToggle}
                         onPress={() => setShowDatePicker(!showDatePicker)}
                      >
-                        <Ionicons name="calendar-outline" size={18} color={colors.accent} />
+                        <Ionicons name="calendar-outline" size={16} color={colors.accent} />
                         <Text style={styles.pickerToggleText}>
-                           {dateOverride ? `Custom: ${dateOverride}` : `Current: ${resolvedDate}`}
+                           {dateOverride ? `Date: ${dateOverride}` : `Date: ${resolvedDate}`}
                         </Text>
+                        <Text style={styles.sourceTag}>({dateSource})</Text>
                         <Ionicons
                            name={showDatePicker ? "chevron-up" : "chevron-down"}
-                           size={16}
+                           size={14}
                            color={colors.textMuted}
                         />
                      </Pressable>
@@ -118,11 +151,10 @@ export default function AddReport() {
                      {showDatePicker && (
                         <View style={styles.expandedBox}>
                            <Field
-                              label="Date override (precedence over algo)"
                               icon="calendar-outline"
                               value={dateOverride}
                               onChangeText={setDateOverride}
-                              placeholder="YYYY-MM-DD"
+                              placeholder="YYYY-MM-DD (overrides algo date)"
                               autoCapitalize="none"
                            />
                            <View style={styles.chipRow}>
@@ -145,101 +177,106 @@ export default function AddReport() {
                            </View>
                            {dateOverride.length === 10 && !isValidISO(dateOverride) ? (
                               <Text style={styles.error}>
-                                 That date doesn&apos;t exist. Use the format YYYY-MM-DD.
+                                 Invalid date. Use YYYY-MM-DD.
                               </Text>
                            ) : null}
                         </View>
                      )}
                   </View>
 
-                  {/* Project selection section (precedence over algo) */}
-                  <View style={{ gap: space.sm }}>
-                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionLabel}>Project</Text>
-                        <Text style={styles.sourceTag}>
-                           ({projectSource}: {resolvedProjects.join(", ")})
-                        </Text>
-                     </View>
-
+                  {/* Project selection section (Multi-select dropdown with removable pills) */}
+                  <View style={{ gap: space.xs + 2 }}>
                      <Pressable
                         style={styles.pickerToggle}
-                        onPress={() => setShowProjectPicker(!showProjectPicker)}
+                        onPress={() => setShowProjectDropdown(!showProjectDropdown)}
                      >
-                        <Ionicons name="folder-outline" size={18} color={colors.accent} />
+                        <Ionicons name="folder-outline" size={16} color={colors.accent} />
                         <Text style={styles.pickerToggleText}>
-                           {chosenProject ? chosenProject : `Detected: ${resolvedProjects.join(", ")}`}
+                           {selectedProjects.length > 0
+                              ? `${selectedProjects.length} project(s) selected`
+                              : `Projects: ${resolvedProjects.join(", ")}`}
                         </Text>
+                        <Text style={styles.sourceTag}>({projectSource})</Text>
                         <Ionicons
-                           name={showProjectPicker ? "chevron-up" : "chevron-down"}
-                           size={16}
+                           name={showProjectDropdown ? "chevron-up" : "chevron-down"}
+                           size={14}
                            color={colors.textMuted}
                         />
                      </Pressable>
 
-                     {showProjectPicker && (
+                     {/* Selected removable pills */}
+                     {selectedProjects.length > 0 && (
+                        <View style={styles.pillContainer}>
+                           {selectedProjects.map((p) => (
+                              <RemovablePill
+                                 key={p}
+                                 label={p}
+                                 onRemove={() => removeProject(p)}
+                              />
+                           ))}
+                        </View>
+                     )}
+
+                     {showProjectDropdown && (
                         <View style={styles.expandedBox}>
                            <Text style={styles.subtext}>
-                              Selected project has precedence over detected project name from text.
+                              Select projects (selected projects take precedence over detected ones):
                            </Text>
                            <View style={styles.chipRow}>
-                              {projectNames.map((p) => (
-                                 <Chip
-                                    key={p}
-                                    label={p}
-                                    active={selectedProject === p && !customProject}
-                                    onPress={() => {
-                                       if (selectedProject === p && !customProject) {
-                                          setSelectedProject("");
-                                       } else {
-                                          setSelectedProject(p);
-                                          setCustomProject("");
-                                       }
-                                    }}
-                                 />
-                              ))}
+                              {projectNames.map((p) => {
+                                 const active = selectedProjects.includes(p);
+                                 return (
+                                    <Chip
+                                       key={p}
+                                       label={p}
+                                       active={active}
+                                       icon={active ? "checkmark" : undefined}
+                                       onPress={() => toggleProject(p)}
+                                    />
+                                 );
+                              })}
                            </View>
-                           <Field
-                              label="Or custom project name"
-                              icon="create-outline"
-                              value={customProject}
-                              onChangeText={(v) => {
-                                 setCustomProject(v);
-                                 if (v) setSelectedProject("");
-                              }}
-                              placeholder="e.g. My Custom Project"
-                           />
-                           {chosenProject ? (
+                           <View style={styles.customInputRow}>
+                              <Field
+                                 placeholder="Type custom project name..."
+                                 value={customProjectInput}
+                                 onChangeText={setCustomProjectInput}
+                                 style={{ flex: 1 }}
+                              />
                               <Button
-                                 label="Clear project selection (use algo detection)"
+                                 label="Add"
+                                 variant="secondary"
+                                 disabled={!customProjectInput.trim()}
+                                 onPress={addCustomProject}
+                              />
+                           </View>
+                           {selectedProjects.length > 0 && (
+                              <Button
+                                 label="Clear all selected projects (use algo detection)"
                                  variant="ghost"
-                                 onPress={() => {
-                                    setSelectedProject("");
-                                    setCustomProject("");
-                                 }}
+                                 onPress={() => setSelectedProjects([])}
                                  style={{ alignSelf: "flex-start", paddingHorizontal: 0 }}
                               />
-                           ) : null}
+                           )}
                         </View>
                      )}
                   </View>
 
-                  {/* Main text input */}
-                  <View style={{ gap: space.sm }}>
+                  {/* Main text input (no label) */}
+                  <View style={{ gap: space.xs }}>
                      <Field
-                        label="Today's work"
                         multiline
                         value={text}
                         onChangeText={setText}
                         placeholder={
-                           "Daily work report\nDate: 12/10/2026\nAdded exe file to the startup folder for uii school\nfixed an issue in daily attendance related to white space..."
+                           "Daily work report\nDate: 12/10/2026\nAdded exe file to startup folder for uii school\nFixed issue in daily attendance related to whitespace..."
                         }
                      />
                      <Text style={styles.count}>{text.length} characters</Text>
                   </View>
 
-                  {/* Additional details list input */}
+                  {/* Additional details list input (no label) */}
                   <StringListEditor
-                     label="Additional details list"
                      items={manualDetails}
                      onChange={setManualDetails}
                      placeholder="A detailed point about what happened..."
@@ -247,7 +284,7 @@ export default function AddReport() {
                      addLabel="Add detail item"
                   />
 
-                  {/* Live preview */}
+                  {/* Live parse preview */}
                   <View style={styles.preview}>
                      <Text style={styles.previewTitle}>Live Parse Preview</Text>
 
@@ -267,7 +304,7 @@ export default function AddReport() {
                      </View>
 
                      {parsed.keyPoints.length > 0 ? (
-                        <View style={{ gap: 6 }}>
+                        <View style={{ gap: 5 }}>
                            <Text style={styles.previewLabel}>
                               Key points ({parsed.keyPoints.length})
                            </Text>
@@ -280,17 +317,17 @@ export default function AddReport() {
                         </View>
                      ) : (
                         <Text style={styles.previewEmpty}>
-                           Type in &quot;Today&apos;s work&quot; above to see detected key points.
+                           Type in the box above to see auto-detected key points.
                         </Text>
                      )}
 
                      {allDetails.length > 0 && (
-                        <View style={{ gap: 6 }}>
+                        <View style={{ gap: 5 }}>
                            <Text style={styles.previewLabel}>
                               Details ({allDetails.length})
                            </Text>
                            {allDetails.map((d, i) => (
-                              <Text key={i} style={styles.previewDetailText} numberOfLines={3}>
+                              <Text key={i} style={styles.previewDetailText} numberOfLines={2}>
                                  {d}
                               </Text>
                            ))}
@@ -298,25 +335,24 @@ export default function AddReport() {
                      )}
                   </View>
 
-                  {/* Actions */}
+                  {/* Actions: Add report and Clear buttons */}
                   <View style={styles.actions}>
                      <Button
                         label="Clear"
                         variant="secondary"
-                        disabled={!text && !dateOverride && !chosenProject && manualDetails.length === 0}
+                        disabled={!text && !dateOverride && selectedProjects.length === 0 && manualDetails.length === 0}
                         onPress={() => {
                            setText("");
                            setDateOverride("");
-                           setSelectedProject("");
-                           setCustomProject("");
+                           setSelectedProjects([]);
+                           setCustomProjectInput("");
                            setManualDetails([]);
                         }}
                      />
                      <Button
-                        label="Save report"
-                        icon="checkmark"
-                        disabled={!valid}
-                        onPress={save}
+                        label="Add report"
+                        icon="add-circle"
+                        onPress={handleAddReport}
                         style={{ flex: 1 }}
                      />
                   </View>
@@ -329,13 +365,6 @@ export default function AddReport() {
 }
 
 const styles = StyleSheet.create({
-   sectionHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-   },
-   sectionLabel: { color: colors.textMuted, fontSize: 13, fontWeight: "600" },
-   sourceTag: { color: colors.textFaint, fontSize: 12 },
    pickerToggle: {
       flexDirection: "row",
       alignItems: "center",
@@ -344,14 +373,21 @@ const styles = StyleSheet.create({
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: radius.md,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
    },
    pickerToggleText: {
       color: colors.text,
-      fontSize: 15,
+      fontSize: 13,
       fontWeight: "500",
       flex: 1,
+   },
+   sourceTag: { color: colors.textFaint, fontSize: 10.5, marginRight: 4 },
+   pillContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+      paddingVertical: 2,
    },
    expandedBox: {
       gap: space.sm,
@@ -359,42 +395,47 @@ const styles = StyleSheet.create({
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: radius.md,
-      padding: space.md,
+      padding: space.sm + 2,
    },
-   subtext: { color: colors.textMuted, fontSize: 12.5 },
-   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
-   error: { color: colors.danger, fontSize: 13 },
-   count: { color: colors.textFaint, fontSize: 12.5, alignSelf: "flex-end" },
+   subtext: { color: colors.textMuted, fontSize: 11 },
+   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: space.xs + 2 },
+   customInputRow: { flexDirection: "row", gap: space.sm, alignItems: "center" },
+   error: { color: colors.danger, fontSize: 11 },
+   count: { color: colors.textFaint, fontSize: 10.5, alignSelf: "flex-end" },
    preview: {
       borderWidth: 1,
       borderStyle: "dashed",
       borderColor: colors.border,
       borderRadius: radius.lg,
-      padding: space.lg,
-      gap: space.md,
+      padding: space.md,
+      gap: space.sm,
    },
-   previewTitle: { color: colors.textMuted, fontSize: 14, fontWeight: "700" },
-   previewEmpty: { color: colors.textFaint, fontSize: 13, lineHeight: 20 },
+   previewTitle: { color: colors.textMuted, fontSize: 12, fontWeight: "700" },
+   previewEmpty: { color: colors.textFaint, fontSize: 11.5, lineHeight: 18 },
    previewRow: { flexDirection: "row", gap: space.sm, alignItems: "center", flexWrap: "wrap" },
-   previewLabel: { color: colors.textMuted, fontSize: 13, fontWeight: "600" },
-   previewValue: { color: colors.text, fontSize: 13.5 },
-   previewSource: { color: colors.accent, fontSize: 12 },
-   previewPointRow: { flexDirection: "row", gap: 8, alignItems: "flex-start" },
+   previewLabel: { color: colors.textMuted, fontSize: 11, fontWeight: "600" },
+   previewValue: { color: colors.text, fontSize: 11.5 },
+   previewSource: { color: colors.accent, fontSize: 10.5 },
+   previewPointRow: { flexDirection: "row", gap: 7, alignItems: "flex-start" },
    previewDot: {
-      width: 5,
-      height: 5,
-      borderRadius: 3,
+      width: 4.5,
+      height: 4.5,
+      borderRadius: 2.5,
       backgroundColor: colors.accent,
-      marginTop: 7,
+      marginTop: 6,
    },
-   previewPointText: { flex: 1, color: colors.text, fontSize: 13.5, lineHeight: 20 },
+   previewPointText: { flex: 1, color: colors.text, fontSize: 11.5, lineHeight: 17 },
    previewDetailText: {
       color: colors.textFaint,
-      fontSize: 13,
-      lineHeight: 19,
-      paddingLeft: 8,
+      fontSize: 11,
+      lineHeight: 17,
+      paddingLeft: 7,
       borderLeftWidth: 2,
       borderLeftColor: colors.accent,
    },
-   actions: { flexDirection: "row", gap: space.md },
+   actions: {
+      flexDirection: "row",
+      gap: space.md,
+      marginTop: space.xs,
+   },
 });

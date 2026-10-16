@@ -13,7 +13,7 @@ export function StringListEditor({
   multiline,
   addLabel,
 }: {
-  label: string;
+  label?: string;
   items: string[];
   onChange: (next: string[]) => void;
   placeholder?: string;
@@ -24,8 +24,8 @@ export function StringListEditor({
   const remove = (i: number) => onChange(items.filter((_, idx) => idx !== i));
 
   return (
-    <View style={{ gap: space.sm }}>
-      <Text style={styles.label}>{label}</Text>
+    <View style={{ gap: space.xs + 2 }}>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
       {items.map((item, i) => (
         <View key={i} style={styles.row}>
           <TextInput
@@ -52,7 +52,7 @@ export function StringListEditor({
 }
 
 const styles = StyleSheet.create({
-  label: { color: colors.textMuted, fontSize: 13, fontWeight: "600" },
+  label: { color: colors.textMuted, fontSize: 11, fontWeight: "600" },
   row: { flexDirection: "row", gap: space.sm, alignItems: "flex-start" },
   input: {
     flex: 1,
@@ -61,9 +61,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.md,
     color: colors.text,
-    fontSize: 15.5,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
+    fontSize: 13.5,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
   },
-  inputMultiline: { minHeight: 120, textAlignVertical: "top", lineHeight: 23 },
+  inputMultiline: { minHeight: 90, textAlignVertical: "top", lineHeight: 20 },
 });

@@ -1,12 +1,14 @@
 import { ExportFormat, ExportModal } from "@/components/ExportModal";
+import { ClearConfirmModal } from "@/components/ClearConfirmModal";
 import { ReportCard } from "@/components/ReportCard";
-import { Button, Chip, Content, Field, Toast } from "@/components/ui";
+import { Button, Content, Field, IconButton, Toast } from "@/components/ui";
 import { formatDate } from "@/lib/format";
-import { getAllReports, toggleStar } from "@/lib/storage";
+import { clearAllReports, getAllReports, toggleStar } from "@/lib/storage";
 import { colors, radius, space } from "@/theme";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { FlatList, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Report } from "../../types/shared";
 
 const PAGE_SIZE = 12;
@@ -22,6 +24,7 @@ export default function Reports() {
    const [sort, setSort] = useState<Sort>("newest");
    const [page, setPage] = useState(0);
    const [exportOpen, setExportOpen] = useState(false);
+   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
    const [toast, setToast] = useState<string | null>(null);
 
    // Reload reports every time the tab gains focus
@@ -76,11 +79,18 @@ export default function Reports() {
       setReports(updated);
    };
 
-   const itemStyle = { width: `${100 / cols}%` as `${number}%`, padding: 6 };
+   const handleConfirmClearAll = async () => {
+      setClearConfirmOpen(false);
+      await clearAllReports();
+      setReports([]);
+      showToast("All reports cleared");
+   };
+
+   const itemStyle = { width: `${100 / cols}%` as `${number}%`, padding: 10 };
 
    return (
       <View style={{ flex: 1 }}>
-         <Content fill style={{ paddingTop: space.lg }}>
+         <Content fill style={{ paddingTop: space.md }}>
             <View style={styles.header}>
                <View style={{ flex: 1 }}>
                   <Text style={styles.title}>Your reports</Text>
@@ -90,10 +100,15 @@ export default function Reports() {
                         : `${sorted.length} of ${reports.length} reports`}
                   </Text>
                </View>
-               <Button
-                  label="Download"
+               {reports.length > 0 && (
+                  <IconButton
+                     icon="trash-outline"
+                     color={colors.danger}
+                     onPress={() => setClearConfirmOpen(true)}
+                  />
+               )}
+               <IconButton
                   icon="download-outline"
-                  variant="secondary"
                   onPress={() => setExportOpen(true)}
                />
             </View>
@@ -111,24 +126,24 @@ export default function Reports() {
 
             <View style={styles.controls}>
                <View style={styles.sortRow}>
-                  <Chip
-                     label="Newest"
+                  <IconButton
+                     icon="arrow-down"
                      active={sort === "newest"}
                      onPress={() => {
                         setSort("newest");
                         setPage(0);
                      }}
                   />
-                  <Chip
-                     label="Oldest"
+                  <IconButton
+                     icon="arrow-up"
                      active={sort === "oldest"}
                      onPress={() => {
                         setSort("oldest");
                         setPage(0);
                      }}
                   />
-                  <Chip
-                     label="Project"
+                  <IconButton
+                     icon="folder-outline"
                      active={sort === "project"}
                      onPress={() => {
                         setSort("project");
@@ -146,7 +161,8 @@ export default function Reports() {
                numColumns={cols}
                keyboardShouldPersistTaps="handled"
                showsVerticalScrollIndicator={false}
-               style={{ marginHorizontal: -6 }}
+               style={{ marginHorizontal: -10 }}
+               contentContainerStyle={{ paddingBottom: 90 }}
                renderItem={({ item }) => (
                   <View style={itemStyle}>
                      <ReportCard
@@ -164,7 +180,7 @@ export default function Reports() {
                      <Text style={styles.emptyText}>
                         {query
                            ? "Try a project name or a date like 2026-10-12."
-                           : "Add your first report from the Add tab."}
+                           : "Add your first report using the + button below."}
                      </Text>
                      {query ? (
                         <Button
@@ -185,6 +201,21 @@ export default function Reports() {
                }
             />
          </Content>
+
+         {/* Floating Add button at the bottom */}
+         <Pressable
+            style={styles.fab}
+            onPress={() => router.push("/")}
+            accessibilityLabel="Add report"
+         >
+            <Ionicons name="add" size={26} color={colors.onAccent} />
+         </Pressable>
+
+         <ClearConfirmModal
+            visible={clearConfirmOpen}
+            onClose={() => setClearConfirmOpen(false)}
+            onConfirm={handleConfirmClearAll}
+         />
 
          <ExportModal
             visible={exportOpen}
@@ -224,18 +255,16 @@ function Pager({
             Showing {start} to {end} of {total}
          </Text>
          <View style={styles.pagerButtons}>
-            <Button
-               label="‹"
-               variant="secondary"
+            <IconButton
+               icon="chevron-back"
                disabled={page === 0}
                onPress={() => onChange(page - 1)}
             />
             <Text style={styles.pageText}>
                Page {page + 1} of {pages}
             </Text>
-            <Button
-               label="›"
-               variant="secondary"
+            <IconButton
+               icon="chevron-forward"
                disabled={page >= pages - 1}
                onPress={() => onChange(page + 1)}
             />
@@ -249,17 +278,17 @@ const styles = StyleSheet.create({
       flexDirection: "row",
       alignItems: "center",
       gap: space.md,
-      marginBottom: space.md,
+      marginBottom: space.sm,
    },
-   title: { color: colors.text, fontSize: 26, fontWeight: "800", letterSpacing: -0.3 },
-   sub: { color: colors.textMuted, fontSize: 14, marginTop: 2 },
+   title: { color: colors.text, fontSize: 24, fontWeight: "800", letterSpacing: -0.3 },
+   sub: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
    controls: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       flexWrap: "wrap",
       gap: space.sm,
-      marginVertical: space.md,
+      marginVertical: space.sm,
    },
    sortRow: { flexDirection: "row", gap: space.sm, flexWrap: "wrap" },
    empty: {
@@ -270,17 +299,17 @@ const styles = StyleSheet.create({
       borderStyle: "dashed",
       borderColor: colors.border,
       borderRadius: radius.lg,
-      margin: 6,
+      margin: 10,
    },
    emptyTitle: {
       color: colors.text,
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: "700",
       textAlign: "center",
    },
    emptyText: {
       color: colors.textMuted,
-      fontSize: 14,
+      fontSize: 12,
       textAlign: "center",
       marginBottom: space.sm,
    },
@@ -290,10 +319,26 @@ const styles = StyleSheet.create({
       justifyContent: "space-between",
       flexWrap: "wrap",
       gap: space.md,
-      paddingHorizontal: 6,
-      paddingVertical: space.xl,
+      paddingHorizontal: 10,
+      paddingVertical: space.lg,
    },
-   pagerInfo: { color: colors.textMuted, fontSize: 13.5 },
-   pagerButtons: { flexDirection: "row", alignItems: "center", gap: space.md },
-   pageText: { color: colors.text, fontSize: 14, fontWeight: "600" },
+   pagerInfo: { color: colors.textMuted, fontSize: 11.5 },
+   pagerButtons: { flexDirection: "row", alignItems: "center", gap: space.sm },
+   pageText: { color: colors.text, fontSize: 12, fontWeight: "600" },
+   fab: {
+      position: "absolute",
+      right: 20,
+      bottom: 24,
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.accent,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.35,
+      shadowRadius: 6,
+      elevation: 6,
+   },
 });
